@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Crea, personaliza y exporta tu modelo de negocio Canvas.">
+  <title>Modelo Canvas · Editor de modelos de negocio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #192b26;
+      --muted: #546762;
+      --green: #17674e;
+      --rule: #dbe4df;
+      --wash: #f4f7f5;
+      --focus: #268865;
+    }
+    body { margin: 0; background: var(--wash); color: var(--ink); font-family: "Inter", sans-serif; }
+    button, input, select, textarea { font: inherit; }
+    button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--focus); outline-offset: 3px;
+    }
+    .topbar { background: #fff; border-bottom: 1px solid var(--rule); }
+    .topbar-inner { max-width: 1600px; min-height: 67px; margin: auto; padding: 10px 32px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 17px; font-weight: 800; letter-spacing: -.03em; }
+    .brand-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: #fff; background: var(--green); font-size: 15px; }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .action { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 37px; padding: 7px 12px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; color: var(--ink); font-weight: 600; font-size: 13px; line-height: 1.35; white-space: nowrap; cursor: pointer; }
+    .action:hover { background: #edf4f0; color: var(--ink); }
+    .action.primary { background: var(--green); border-color: var(--green); color: #fff; }
+    .action.primary:hover { background: #10533e; }
+    .action:disabled { cursor: wait; opacity: .65; }
+    details { position: relative; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    .export-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 3; width: 195px; padding: 5px; border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 10px 28px #17392a20; background: #fff; }
+    .export-menu button { border: 0; width: 100%; justify-content: flex-start; }
+    .workspace { max-width: 1600px; margin: auto; padding: 29px 32px 25px; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .intro h1 { font-size: clamp(27px, 3vw, 35px); font-weight: 800; letter-spacing: -.055em; margin: 0 0 5px; }
+    .intro p { color: var(--muted); font-size: 14px; margin: 0; }
+    .autosave { flex-shrink: 0; color: var(--green); font-size: 12px; padding-bottom: 3px; }
+    .editor-layout { display: grid; grid-template-columns: 252px minmax(0, 1fr); align-items: start; gap: 22px; }
+    .settings { background: #fff; border: 1px solid var(--rule); border-radius: 13px; overflow: hidden; }
+    .settings-head, .settings-group { padding: 14px 16px; }
+    .settings-head { border-bottom: 1px solid var(--rule); }
+    .settings-head h2 { display: flex; gap: 9px; align-items: center; font-size: 15px; font-weight: 800; margin: 0; }
+    .settings-head i { color: var(--green); }
+    .settings-group + .settings-group { border-top: 1px solid var(--rule); }
+    .group-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; margin: 0 0 9px; }
+    .settings .form-control, .settings .form-select { min-width: 0; border-color: var(--rule); color: var(--ink); font-size: 13px; }
+    .settings input.form-control { text-overflow: ellipsis; }
+    .setting-label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 5px; }
+    .presets { display: flex; gap: 8px; margin-bottom: 11px; }
+    .preset { display: grid; place-items: center; width: 31px; height: 28px; border: 1px solid var(--rule); border-radius: 6px; color: var(--sample); background: #fff; cursor: pointer; }
+    .preset i { width: 13px; height: 13px; border-radius: 50%; background: currentColor; }
+    .preset[aria-pressed="true"] { border-color: currentColor; background: #f5f8f6; }
+    .color-row, .size-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+    .color-row + .color-row { margin-top: 5px; }
+    .color-field { display: flex; align-items: center; gap: 7px; }
+    .color-field output, .size-heading output { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .color-field input { width: 25px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+    .color-field input::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-field input::-webkit-color-swatch { border: 1px solid #0002; border-radius: 5px; }
+    .size-control { margin-top: 10px; }
+    input[type="range"] { display: block; width: 100%; accent-color: var(--green); height: 18px; cursor: pointer; }
+    .board-wrap { min-width: 0; }
+    .board-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; margin-bottom: 10px; }
+    .board-toolbar h2 { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 0; font-weight: 750; }
+    .board-toolbar h2 i { color: var(--green); }
+    .board-toolbar .action { min-height: 32px; font-size: 12px; }
+    .board-shell { background: #fff; border: 1px solid var(--rule); border-radius: 14px; padding: 12px; box-shadow: 0 4px 15px #1b392909; }
+    .board {
+      --accent: #17674e;
+      --paper: #ffffff;
+      --copy: #273a34;
+      --canvas-font: "DM Sans", sans-serif;
+      --copy-size: 13px;
+      --heading-size: 35px;
+      background: var(--paper); color: var(--copy); font-family: var(--canvas-font);
+      border: 1px solid var(--line); border-radius: 7px; overflow: hidden;
+    }
+    .board-title { padding: 23px 19px 21px; border-bottom: 1px solid var(--line); }
+    .board-title h3 { color: var(--accent); font-size: var(--heading-size); line-height: 1.13; font-weight: 700; letter-spacing: -.045em; margin: 0; overflow-wrap: anywhere; }
+    .canvas-grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 1px; background: var(--line); }
+    .block { min-width: 0; position: relative; background: var(--paper); padding: 12px 12px 14px; }
+    .block[data-block="value"], .block[data-block="costs"], .block[data-block="income"] { background: var(--tint); }
+    .block[data-block="partners"] { grid-area: 1 / 1 / 3 / 3; }
+    .block[data-block="activities"] { grid-area: 1 / 3 / 2 / 5; }
+    .block[data-block="resources"] { grid-area: 2 / 3 / 3 / 5; }
+    .block[data-block="value"] { grid-area: 1 / 5 / 3 / 7; }
+    .block[data-block="relationships"] { grid-area: 1 / 7 / 2 / 9; }
+    .block[data-block="channels"] { grid-area: 2 / 7 / 3 / 9; }
+    .block[data-block="segments"] { grid-area: 1 / 9 / 3 / 11; }
+    .block[data-block="costs"] { grid-area: 3 / 1 / 4 / 6; }
+    .block[data-block="income"] { grid-area: 3 / 6 / 4 / 11; }
+    .block-header { display: flex; align-items: flex-start; gap: 7px; color: var(--accent); }
+    .block-icon { flex: 0 0 25px; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 6px; background: var(--icon-bg); font-size: 11px; }
+    .block h4 { flex: 1; margin: 4px 0 0; font-size: calc(var(--copy-size) + 1px); line-height: 1.23; font-weight: 700; overflow-wrap: anywhere; }
+    .edit-block { display: grid; place-items: center; min-width: 24px; height: 25px; padding: 0; border: 0; border-radius: 5px; color: var(--accent); background: transparent; cursor: pointer; font-size: 11px; }
+    .edit-block:hover, .edit-block:focus-visible { background: var(--icon-bg); }
+    .block ul { font-size: var(--copy-size); line-height: 1.37; padding-left: 15px; margin: 9px 0 0; overflow-wrap: anywhere; }
+    .block li + li { margin-top: 4px; }
+    .block li::marker { color: var(--accent); }
+    .empty-block { margin: 10px 0 0; font-size: var(--copy-size); opacity: .7; font-style: italic; }
+    .board-note { display: flex; gap: 7px; align-items: center; color: var(--muted); margin: 10px 0 0; font-size: 12px; }
+    .board-note i { color: var(--green); }
+    .capture-stage { position: fixed; left: 0; top: 0; z-index: -1; pointer-events: none; }
+    .board.export-copy { border-radius: 0; }
+    .export-copy .edit-block, .export-copy .empty-block { display: none; }
+    .export-copy .block { padding: 16px 17px 18px; }
+    .export-copy .board-title { padding: 25px 22px; }
+    dialog { width: min(520px, calc(100% - 26px)); max-height: calc(100dvh - 28px); overflow: auto; padding: 0; color: var(--ink); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 14px 55px #10251b40; }
+    dialog::backdrop { background: #172f2666; }
+    .dialog-head, .dialog-body, .dialog-actions { padding: 16px 19px; }
+    .dialog-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--rule); }
+    .dialog-head h2 { font-size: 18px; font-weight: 750; margin: 0; }
+    .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--rule); }
+    .dialog-body p { margin: 0; color: var(--muted); font-size: 14px; }
+    .dialog-body textarea { min-height: 160px; }
+    .feedback { position: fixed; z-index: 4; bottom: 18px; right: 20px; max-width: calc(100% - 40px); }
+    .feedback:not(:empty) { background: #19392f; color: white; border-radius: 8px; box-shadow: 0 5px 18px #19392f26; padding: 10px 14px; font-size: 13px; }
+    @media (max-width: 1180px) {
+      .workspace, .topbar-inner { padding-left: 20px; padding-right: 20px; }
+      .editor-layout { grid-template-columns: 218px minmax(0, 1fr); gap: 15px; }
+      .board:not(.export-copy) .block { padding-left: 8px; padding-right: 8px; }
+    }
+    @media (max-width: 960px) {
+      .editor-layout { grid-template-columns: 1fr; }
+      .settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .settings-head { grid-column: 1 / -1; }
+      .settings-group + .settings-group { border-top: 0; border-left: 1px solid var(--rule); }
+    }
+    @media (max-width: 720px) {
+      .canvas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .board:not(.export-copy) .block[data-block] { grid-area: auto; }
+      .board.export-copy .canvas-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+    }
+    @media (max-width: 510px) {
+      .topbar-inner, .workspace { padding-left: 12px; padding-right: 12px; }
+      .workspace { padding-top: 20px; }
+      .topbar-inner { flex-wrap: wrap; }
+      .intro { flex-wrap: wrap; margin-bottom: 16px; }
+      .settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .settings-head + .settings-group { grid-column: 1 / -1; border-bottom: 1px solid var(--rule); }
+      .settings-group, .settings-head { padding: 11px; }
+      .settings-head + .settings-group + .settings-group { border-left: 0; }
+      .canvas-grid { grid-template-columns: 1fr; }
+      .board-shell { padding: 6px; }
+      .board:not(.export-copy) .block { padding: 12px; }
+    }
+    @media print {
+      @page { size: A3 landscape; margin: 9mm; }
+      * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      body { background: #fff; }
+      .topbar, .intro, .settings, .board-toolbar, .board-note, .feedback, .capture-stage, dialog, .edit-block, .empty-block { display: none !important; }
+      .workspace, .board-shell { padding: 0; margin: 0; border: 0; box-shadow: none; }
+      .editor-layout { display: block; }
+      .board .canvas-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+      .block { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-icon" aria-hidden="true"><i class="fa-solid fa-table-cells-large"></i></span> Modelo Canvas</div>
+      <div class="top-actions">
+        <button type="button" class="action" id="new-model"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo</button>
+        <details id="export-menu">
+          <summary class="action primary"><i class="fa-solid fa-arrow-down-to-line" aria-hidden="true"></i> Exportar <i class="fa-solid fa-chevron-down small" aria-hidden="true"></i></summary>
+          <div class="export-menu">
+            <button type="button" class="action" data-export="png"><i class="fa-regular fa-image" aria-hidden="true"></i> Imagen PNG</button>
+            <button type="button" class="action" data-export="pdf"><i class="fa-regular fa-file-pdf" aria-hidden="true"></i> Documento PDF</button>
+            <button type="button" class="action" data-export="json"><i class="fa-solid fa-code" aria-hidden="true"></i> Proyecto editable</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <div class="intro">
+      <div>
+        <h1>Editor de modelos de negocio</h1>
+        <p>Organiza tu idea en los nueve bloques del modelo Canvas.</p>
+      </div>
+      <div class="autosave" id="save-status" aria-live="polite"></div>
+    </div>
+
+    <div class="editor-layout">
+      <aside class="settings" aria-labelledby="settings-title">
+        <div class="settings-head"><h2 id="settings-title"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Personalizar</h2></div>
+        <div class="settings-group">
+          <label class="setting-label" for="model-title">Título del modelo</label>
+          <input class="form-control form-control-sm" id="model-title" maxlength="150" placeholder="Nombre de tu modelo">
+        </div>
+        <div class="settings-group">
+          <h3 class="group-label">Colores</h3>
+          <div class="presets" id="presets" aria-label="Paletas de colores"></div>
+          <label class="color-row" for="accent">Acento <span class="color-field"><output id="accent-value" for="accent"></output><input type="color" id="accent"></span></label>
+          <label class="color-row" for="paper">Fondo <span class="color-field"><output id="paper-value" for="paper"></output><input type="color" id="paper"></span></label>
+          <label class="color-row" for="copy">Texto <span class="color-field"><output id="copy-value" for="copy"></output><input type="color" id="copy"></span></label>
+        </div>
+        <div class="settings-group">
+          <h3 class="group-label">Tipografía</h3>
+          <label class="setting-label" for="font">Fuente</label>
+          <select class="form-select form-select-sm" id="font">
+            <option value="DM Sans">DM Sans</option>
+            <option value="Inter">Inter</option>
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="Space Mono">Space Mono</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+          </select>
+          <div class="size-control">
+            <label class="size-heading" for="title-size">Tamaño del título <output id="title-size-value" for="title-size"></output></label>
+            <input id="title-size" type="range" min="22" max="66">
+          </div>
+          <div class="size-control">
+            <label class="size-heading" for="text-size">Tamaño del texto <output id="text-size-value" for="text-size"></output></label>
+            <input id="text-size" type="range" min="11" max="26">
+          </div>
+        </div>
+        <div class="settings-group">
+          <label class="setting-label" for="export-width">Ancho de exportación PNG</label>
+          <select class="form-select form-select-sm" id="export-width">
+            <option value="1200">1200 px</option>
+            <option value="1600">1600 px</option>
+            <option value="1920">1920 px</option>
+            <option value="2400">2400 px</option>
+          </select>
+        </div>
+      </aside>
+
+      <section class="board-wrap" aria-labelledby="preview-title">
+        <div class="board-toolbar">
+          <h2 id="preview-title"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i> Vista del modelo</h2>
+          <div class="d-flex flex-wrap justify-content-end gap-1">
+            <button type="button" class="action" id="import-model"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Importar</button>
+            <button type="button" class="action" id="load-example"><i class="fa-regular fa-folder-open" aria-hidden="true"></i> Abrir ejemplo</button>
+          </div>
+          <input type="file" id="file-input" accept=".json,application/json" hidden>
+        </div>
+        <div class="board-shell">
+          <div class="board" id="board">
+            <div class="board-title"><h3 id="board-title"></h3></div>
+            <div class="canvas-grid" id="blocks"></div>
+          </div>
+        </div>
+        <p class="board-note"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Usa el lápiz de cada bloque para editar su encabezado y sus ideas.</p>
+      </section>
+    </div>
+  </main>
+  <div class="capture-stage" id="capture-stage" aria-hidden="true" inert></div>
+  <div class="feedback" id="feedback" role="status"></div>
+
+  <dialog id="block-dialog" aria-labelledby="block-dialog-title">
+    <form id="block-form">
+      <div class="dialog-head">
+        <h2 id="block-dialog-title"></h2>
+        <button class="action" type="button" data-close="block-dialog" aria-label="Cerrar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+      <div class="dialog-body">
+        <label class="setting-label" for="block-title">Encabezado</label>
+        <input class="form-control mb-3" id="block-title" maxlength="100" required autofocus>
+        <label class="setting-label" for="block-items">Ideas del bloque</label>
+        <textarea class="form-control" id="block-items" rows="7" maxlength="3500" aria-describedby="block-help"></textarea>
+        <p class="mt-2" id="block-help">Cada línea se convierte en una viñeta.</p>
+      </div>
+      <div class="dialog-actions">
+        <button class="action" type="button" data-close="block-dialog">Cancelar</button>
+        <button class="action primary" type="submit">Guardar bloque</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="replace-dialog" aria-labelledby="replace-title">
+    <form method="dialog">
+      <div class="dialog-head"><h2 id="replace-title"></h2></div>
+      <div class="dialog-body"><p>Esta acción reemplaza el modelo actual. Puedes descargar una copia editable antes de continuar.</p></div>
+      <div class="dialog-actions">
+        <button type="button" class="action" id="backup-model">Descargar copia</button>
+        <button class="action" value="cancel" autofocus>Cancelar</button>
+        <button class="action primary" value="replace" id="confirm-replace">Continuar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
+  <script>
+    "use strict";
+
+    const definitions = [
+      { id: "partners", title: "Socios clave", icon: "fa-handshake", prompt: "¿Quiénes te ayudan a operar?", items: [
+        "Empresas de logística y transporte para mejorar envíos.",
+        "Bancos y fintech para fortalecer Mercado Pago.",
+        "Marcas y comercios que venden en la plataforma.",
+        "Gobiernos y reguladores para expandir operaciones.",
+        "Empresas de tecnología para mejorar la infraestructura digital."
+      ] },
+      { id: "activities", title: "Actividades clave", icon: "fa-list-check", prompt: "¿Qué actividades sostienen el negocio?", items: [
+        "Desarrollo continuo de la plataforma y herramientas digitales.",
+        "Expansión y optimización de la red logística en Latinoamérica.",
+        "Innovación en soluciones financieras con Mercado Pago."
+      ] },
+      { id: "resources", title: "Recursos clave", icon: "fa-layer-group", prompt: "¿Qué recursos necesitas?", items: [
+        "Plataforma tecnológica con IA y análisis de datos.",
+        "Red de logística y distribución con Mercado Envíos.",
+        "Mercado Pago como ecosistema financiero digital."
+      ] },
+      { id: "value", title: "Propuesta de valor", icon: "fa-gem", prompt: "¿Qué problema resuelves?", items: [
+        "Plataforma de comercio electrónico con una amplia variedad de productos.",
+        "Soluciones logísticas con Mercado Envíos.",
+        "Servicios financieros digitales con Mercado Pago.",
+        "Inteligencia artificial para mejorar la experiencia del usuario.",
+        "Herramientas de venta digital para emprendedores."
+      ] },
+      { id: "relationships", title: "Relaciones con clientes", icon: "fa-comments", prompt: "¿Cómo atiendes y conservas a tus clientes?", items: [
+        "Atención automatizada con chatbots y asistencia personalizada.",
+        "Programas de fidelización con beneficios exclusivos.",
+        "Seguridad en pagos y envíos para generar confianza."
+      ] },
+      { id: "channels", title: "Canales", icon: "fa-share-nodes", prompt: "¿Cómo llegas a tus clientes?", items: [
+        "Sitio web y aplicación móvil con recomendaciones personalizadas.",
+        "Mercado Envíos como canal de distribución y logística."
+      ] },
+      { id: "segments", title: "Segmentos de clientes", icon: "fa-users", prompt: "¿A quién le ofreces valor?", items: [
+        "Consumidores que buscan compras en línea rápidas y seguras.",
+        "Pequeñas y medianas empresas que venden en la plataforma.",
+        "Grandes marcas que usan Mercado Libre como canal de ventas.",
+        "Usuarios de servicios financieros digitales.",
+        "Emprendedores que buscan soluciones logísticas y de venta digital."
+      ] },
+      { id: "costs", title: "Estructura de costos", icon: "fa-calculator", prompt: "¿Cuáles son tus costos principales?", items: [
+        "Desarrollo y mantenimiento de la plataforma de comercio electrónico.",
+        "Operación y expansión logística de Mercado Envíos.",
+        "Seguridad digital y protección de datos.",
+        "Marketing digital y estrategias de crecimiento.",
+        "Innovación y desarrollo de Mercado Pago."
+      ] },
+      { id: "income", title: "Fuentes de ingresos", icon: "fa-chart-line", prompt: "¿De dónde vienen tus ingresos?", items: [
+        "Comisiones por ventas en la plataforma.",
+        "Servicios logísticos de Mercado Envíos.",
+        "Transacciones y comisiones de Mercado Pago.",
+        "Publicidad y posicionamiento de productos.",
+        "Financiamiento y créditos digitales para usuarios y vendedores."
+      ] }
+    ];
+
+    const palettes = [
+      { name: "Verde", accent: "#17674e", paper: "#ffffff", copy: "#273a34" },
+      { name: "Azul de la referencia", accent: "#007dae", paper: "#fcf6ef", copy: "#29394a" },
+      { name: "Violeta", accent: "#6946a0", paper: "#fcf9ff", copy: "#342842" },
+      { name: "Terracota", accent: "#a34727", paper: "#fff9f4", copy: "#46312a" },
+      { name: "Grafito", accent: "#303c49", paper: "#f9fafc", copy: "#19242d" }
+    ];
+    const fonts = {
+      "DM Sans": "sans-serif", Inter: "sans-serif", "Playfair Display": "serif",
+      "Space Mono": "monospace", Arial: "sans-serif", Georgia: "serif"
+    };
+    const defaults = { accent: palettes[0].accent, paper: palettes[0].paper, copy: palettes[0].copy,
+      font: "DM Sans", titleSize: 35, textSize: 13, exportWidth: 1600 };
+    const storageKey = "modelo-canvas-v1";
+    const get = (id) => document.getElementById(id);
+    const board = get("board");
+    const feedback = get("feedback");
+    const colorKeys = ["accent", "paper", "copy"];
+    let feedbackTimer;
+    let activeBlock;
+    let pendingModel;
+    let exporting = false;
+
+    function createModel(example) {
+      return {
+        version: 1,
+        title: example ? "Modelo Canvas de Mercado Libre" : "Mi modelo Canvas",
+        design: { ...defaults },
+        blocks: definitions.map(({ id, title, items }) => ({ id, title, items: example ? [...items] : [] }))
+      };
+    }
+
+    function normalizeModel(value) {
+      if (value?.version !== 1 || typeof value.title !== "string" || !Array.isArray(value.blocks)) {
+        throw new Error("Selecciona un proyecto JSON generado por el editor.");
+      }
+
+      const next = createModel(false);
+      next.title = value.title.slice(0, 150);
+      for (const key of colorKeys) {
+        const color = value.design?.[key];
+        if (typeof color === "string" && /^#[0-9a-f]{6}$/i.test(color)) next.design[key] = color.toLowerCase();
+      }
+      if (Object.hasOwn(fonts, value.design?.font)) next.design.font = value.design.font;
+
+      for (const [key, min, max] of [["titleSize", 22, 66], ["textSize", 11, 26]]) {
+        const size = value.design?.[key];
+        if (Number.isInteger(size)) next.design[key] = Math.max(min, Math.min(max, size));
+      }
+      if ([1200, 1600, 1920, 2400].includes(value.design?.exportWidth)) next.design.exportWidth = value.design.exportWidth;
+
+      next.blocks = next.blocks.map((block) => {
+        const source = value.blocks.find((item) => item?.id === block.id);
+        if (!source || typeof source.title !== "string" || !Array.isArray(source.items) ||
+            source.items.some((item) => typeof item !== "string")) {
+          throw new Error("El proyecto debe incluir los nueve bloques del modelo.");
+        }
+        const items = source.items.join("\n").slice(0, 3500).split("\n").map((item) => item.trim()).filter(Boolean);
+        return { id: block.id, title: source.title.trim().slice(0, 100) || block.title, items };
+      });
+      return next;
+    }
+
+    function loadModel() {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) return normalizeModel(JSON.parse(saved));
+      } catch {
+        // A corrupt or unavailable store can be replaced by the next successful save.
+      }
+      return createModel(true);
+    }
+
+    let model = loadModel();
+
+    function saveModel() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(model));
+        get("save-status").textContent = "✓ Guardado en este navegador";
+      } catch {
+        get("save-status").textContent = "Guardado local no disponible";
+      }
+    }
+
+    function showFeedback(message) {
+      clearTimeout(feedbackTimer);
+      feedback.textContent = message;
+      feedbackTimer = setTimeout(() => { feedback.textContent = ""; }, 6500);
+    }
+
+    function mixColors(base, accent, ratio) {
+      const channels = [1, 3, 5].map((offset) => {
+        const from = parseInt(base.slice(offset, offset + 2), 16);
+        const to = parseInt(accent.slice(offset, offset + 2), 16);
+        return Math.round(from + (to - from) * ratio).toString(16).padStart(2, "0");
+      });
+      return "#" + channels.join("");
+    }
+
+    function updateDesign() {
+      const { accent, paper, copy, font, titleSize, textSize } = model.design;
+      board.style.setProperty("--accent", accent);
+      board.style.setProperty("--paper", paper);
+      board.style.setProperty("--copy", copy);
+      board.style.setProperty("--canvas-font", '"' + font + '", ' + fonts[font]);
+      board.style.setProperty("--heading-size", titleSize + "px");
+      board.style.setProperty("--copy-size", textSize + "px");
+      board.style.setProperty("--line", mixColors(paper, accent, .28));
+      board.style.setProperty("--icon-bg", mixColors(paper, accent, .13));
+      board.style.setProperty("--tint", mixColors(paper, accent, .045));
+      for (const key of colorKeys) {
+        get(key).value = model.design[key];
+        get(key + "-value").value = model.design[key].toUpperCase();
+      }
+      get("title-size-value").value = titleSize + " px";
+      get("text-size-value").value = textSize + " px";
+      for (const [index, button] of Array.from(get("presets").children).entries()) {
+        button.setAttribute("aria-pressed", String(colorKeys.every((key) => palettes[index][key] === model.design[key])));
+      }
+    }
+
+    function makeIcon(classes) {
+      const icon = document.createElement("i");
+      icon.className = classes;
+      icon.setAttribute("aria-hidden", "true");
+      return icon;
+    }
+
+    function displayTitle() {
+      return model.title.trim() || "Mi modelo Canvas";
+    }
+
+    function renderBlocks() {
+      const cards = definitions.map((definition, index) => {
+        const block = model.blocks[index];
+        const card = document.createElement("article");
+        card.className = "block";
+        card.dataset.block = definition.id;
+
+        const header = document.createElement("div");
+        header.className = "block-header";
+        const iconBox = document.createElement("span");
+        iconBox.className = "block-icon";
+        iconBox.append(makeIcon("fa-solid " + definition.icon));
+        const title = document.createElement("h4");
+        title.textContent = block.title;
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "edit-block";
+        edit.dataset.edit = definition.id;
+        edit.title = "Editar " + block.title;
+        edit.setAttribute("aria-label", edit.title);
+        edit.append(makeIcon("fa-solid fa-pencil"));
+        header.append(iconBox, title, edit);
+        card.append(header);
+
+        if (block.items.length) {
+          const list = document.createElement("ul");
+          for (const idea of block.items) {
+            const item = document.createElement("li");
+            item.textContent = idea;
+            list.append(item);
+          }
+          card.append(list);
+        } else {
+          const placeholder = document.createElement("p");
+          placeholder.className = "empty-block";
+          placeholder.textContent = definition.prompt;
+          card.append(placeholder);
+        }
+        return card;
+      });
+      get("blocks").replaceChildren(...cards);
+    }
+
+    function renderModel() {
+      get("model-title").value = model.title;
+      get("board-title").textContent = displayTitle();
+      get("font").value = model.design.font;
+      get("title-size").value = model.design.titleSize;
+      get("text-size").value = model.design.textSize;
+      get("export-width").value = model.design.exportWidth;
+      updateDesign();
+      renderBlocks();
+    }
+
+    function replaceModel(next, heading, action) {
+      pendingModel = next;
+      get("replace-title").textContent = heading;
+      get("confirm-replace").textContent = action;
+      get("replace-dialog").returnValue = "";
+      get("replace-dialog").showModal();
+    }
+
+    function fileName() {
+      return displayTitle().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "modelo-canvas";
+    }
+
+    function download(blob, name) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    function exportProject() {
+      const data = new Blob([JSON.stringify(model, null, 2)], { type: "application/json" });
+      download(data, fileName() + ".json");
+      showFeedback("Proyecto editable descargado.");
+    }
+
+    async function exportVisual(format) {
+      if (exporting) return;
+      const name = fileName();
+      const targetWidth = model.design.exportWidth;
+      const capture = board.cloneNode(true);
+      capture.classList.add("export-copy");
+      capture.removeAttribute("id");
+      capture.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+      capture.style.width = "1200px";
+      const stage = get("capture-stage");
+      exporting = true;
+      showFeedback("Preparando " + format.toUpperCase() + "…");
+
+      try {
+        if (!window.html2canvas) throw new Error("No se pudo cargar el exportador de imágenes. Revisa tu conexión.");
+        if (format === "pdf" && !window.jspdf?.jsPDF) throw new Error("No se pudo cargar el exportador de PDF. Revisa tu conexión.");
+
+        stage.append(capture);
+        await document.fonts.ready;
+        const canvas = await window.html2canvas(capture, {
+          backgroundColor: null,
+          scale: targetWidth / 1200,
+          windowWidth: Math.max(1280, window.innerWidth),
+          scrollX: 0,
+          scrollY: 0,
+          logging: false
+        });
+
+        if (format === "pdf") {
+          const width = 420;
+          const height = 297;
+          const margin = 10;
+          const factor = Math.min((width - 2 * margin) / canvas.width, (height - 2 * margin) / canvas.height);
+          const imageWidth = canvas.width * factor;
+          const imageHeight = canvas.height * factor;
+          const pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a3", compress: true });
+          pdf.addImage(canvas, "PNG", (width - imageWidth) / 2, margin, imageWidth, imageHeight);
+          pdf.save(name + ".pdf");
+        } else {
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!blob) throw new Error("No se pudo generar la imagen.");
+          download(blob, name + ".png");
+        }
+        showFeedback(format.toUpperCase() + " descargado.");
+      } catch (error) {
+        showFeedback(error.message || "No se pudo exportar el modelo.");
+      } finally {
+        capture.remove();
+        exporting = false;
+      }
+    }
+
+    for (const palette of palettes) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "preset";
+      button.style.setProperty("--sample", palette.accent);
+      button.title = palette.name;
+      button.setAttribute("aria-label", palette.name);
+      button.append(makeIcon(""));
+      button.addEventListener("click", () => {
+        for (const key of colorKeys) model.design[key] = palette[key];
+        updateDesign();
+        saveModel();
+      });
+      get("presets").append(button);
+    }
+
+    get("model-title").addEventListener("input", (event) => {
+      model.title = event.target.value;
+      get("board-title").textContent = displayTitle();
+      saveModel();
+    });
+
+    for (const [id, key] of [...colorKeys.map((key) => [key, key]), ["font", "font"],
+      ["title-size", "titleSize"], ["text-size", "textSize"], ["export-width", "exportWidth"]]) {
+      get(id).addEventListener("input", (event) => {
+        const field = event.target;
+        model.design[key] = field.type === "range" || id === "export-width" ? Number(field.value) : field.value;
+        updateDesign();
+        saveModel();
+      });
+    }
+
+    get("blocks").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-edit]");
+      if (!button) return;
+      activeBlock = model.blocks.find((block) => block.id === button.dataset.edit);
+      get("block-dialog-title").textContent = "Editar " + activeBlock.title;
+      get("block-title").value = activeBlock.title;
+      get("block-title").setCustomValidity("");
+      get("block-items").value = activeBlock.items.join("\n");
+      get("block-dialog").showModal();
+    });
+
+    get("block-title").addEventListener("input", (event) => event.target.setCustomValidity(""));
+    get("block-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const titleField = get("block-title");
+      const title = titleField.value.trim();
+      if (!title) {
+        titleField.setCustomValidity("Escribe un encabezado.");
+        titleField.reportValidity();
+        return;
+      }
+      activeBlock.title = title;
+      activeBlock.items = get("block-items").value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+      get("block-dialog").close();
+      renderBlocks();
+      get("blocks").querySelector('[data-edit="' + activeBlock.id + '"]').focus();
+      saveModel();
+    });
+
+    for (const button of document.querySelectorAll("[data-close]")) {
+      button.addEventListener("click", () => get(button.dataset.close).close());
+    }
+
+    get("new-model").addEventListener("click", () => replaceModel(createModel(false), "¿Crear un modelo nuevo?", "Crear modelo"));
+    get("load-example").addEventListener("click", () => replaceModel(createModel(true), "¿Abrir el ejemplo de Mercado Libre?", "Abrir ejemplo"));
+    get("backup-model").addEventListener("click", exportProject);
+    get("replace-dialog").addEventListener("close", (event) => {
+      if (event.target.returnValue === "replace" && pendingModel) {
+        model = pendingModel;
+        renderModel();
+        saveModel();
+        showFeedback("Modelo listo para editar.");
+      }
+      pendingModel = null;
+    });
+
+    get("import-model").addEventListener("click", () => get("file-input").click());
+    get("file-input").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      try {
+        if (file.size > 250000) throw new Error("El archivo supera el tamaño de un proyecto Canvas.");
+        const next = normalizeModel(JSON.parse(await file.text()));
+        replaceModel(next, "¿Importar el modelo?", "Importar");
+      } catch (error) {
+        showFeedback(error instanceof SyntaxError ? "El archivo no contiene un proyecto JSON válido." : error.message);
+      }
+    });
+
+    const exportMenu = get("export-menu");
+    exportMenu.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-export]");
+      if (!button) return;
+      exportMenu.open = false;
+      exportMenu.querySelector("summary").focus();
+      if (button.dataset.export === "json") exportProject();
+      else void exportVisual(button.dataset.export);
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!exportMenu.contains(event.target)) exportMenu.open = false;
+    });
+    exportMenu.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !exportMenu.open) return;
+      exportMenu.open = false;
+      exportMenu.querySelector("summary").focus();
+    });
+
+    renderModel();
+    saveModel();
+  </script>
+</body>
+</html>
