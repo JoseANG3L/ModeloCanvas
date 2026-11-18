@@ -313,6 +313,48 @@ function exportProject() {
   showFeedback("Proyecto editable descargado.");
 }
 
+async function prepareExportIcons(capture, scale) {
+  // Render font glyphs ourselves: html2canvas can lose icon pseudo-elements.
+  capture.querySelectorAll(".edit-block").forEach((button) => button.remove());
+  await Promise.all(Array.from(capture.querySelectorAll(".block-icon i"), async (icon) => {
+    const style = getComputedStyle(icon, "::before");
+    const glyph = style.content.replace(/^['"]|['"]$/g, "");
+    if (!glyph || glyph === "none" || glyph === "normal") {
+      throw new Error("No se pudieron cargar los iconos. Revisa tu conexión e intenta exportar de nuevo.");
+    }
+
+    const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const loaded = await document.fonts.load(font, glyph);
+    if (!loaded.length) {
+      throw new Error("No se pudieron cargar los iconos. Revisa tu conexión e intenta exportar de nuevo.");
+    }
+
+    const bounds = icon.getBoundingClientRect();
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(bounds.width * scale);
+    canvas.height = Math.ceil(bounds.height * scale);
+    const context = canvas.getContext("2d");
+    context.scale(scale, scale);
+    context.font = font;
+    context.fillStyle = style.color;
+    const metrics = context.measureText(glyph);
+    const x = (bounds.width + metrics.actualBoundingBoxLeft - metrics.actualBoundingBoxRight) / 2;
+    const y = (bounds.height + metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+    context.fillText(glyph, x, y);
+
+    const image = new Image();
+    image.alt = "";
+    image.setAttribute("aria-hidden", "true");
+    image.width = bounds.width;
+    image.height = bounds.height;
+    image.style.width = bounds.width + "px";
+    image.style.height = bounds.height + "px";
+    image.src = canvas.toDataURL("image/png");
+    await image.decode();
+    icon.replaceWith(image);
+  }));
+}
+
 async function exportVisual(format) {
   if (exporting) return;
   const name = fileName();
@@ -333,6 +375,7 @@ async function exportVisual(format) {
 
     stage.append(capture);
     await document.fonts.ready;
+    await prepareExportIcons(capture, targetWidth / captureWidth);
     const canvas = await window.html2canvas(capture, {
       backgroundColor: null,
       scale: targetWidth / captureWidth,
